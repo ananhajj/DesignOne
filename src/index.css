@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Base (RTL + ألوان + خط) ===== */
+@layer base {
+  html {
+    font-family: theme("fontFamily.sans");
+  }
+
+  html[dir="rtl"] * {
+    letter-spacing: 0;
+    /* العربي أوضح */
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-extrabold text-neutral-900;
+  }
+
+  /* ألوان نص وروابط افتراضيًا */
+  a {
+    @apply text-primary hover:opacity-90;
+  }
+}
+
+/* ===== Components (أزرار/بادج/كارد/حاوية) ===== */
+@layer components {
+
+  /* Container جاهزة */
+  .container-pro {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:opacity-90;
+  }
+
+  .btn-outline {
+    @apply border border-neutral-300 text-neutral-800 hover:bg-neutral-100;
+  }
+
+  .btn-ghost {
+    @apply text-neutral-700 hover:bg-neutral-100;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-sm;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center rounded-lg px-3 py-1 text-xs font-semibold;
+  }
+
+  .badge-accent {
+    @apply bg-accent-100 text-accent-700;
+  }
+
+  .badge-primary {
+    @apply bg-primary/10 text-primary;
+  }
+
+  /* Cards */
+  .card {
+    @apply rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm;
+  }
+
+  .card-hover {
+    @apply transition hover:shadow-md;
+  }
+
+  /* Section spacing */
+  .section {
+    @apply py-16 md:py-24;
+  }
+}
+
+/* ===== Utilities صغيرة مفيدة ===== */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+ 
+
+  .bg-radial-accent {
+    @apply bg-radial-accent;
+  }
+}
