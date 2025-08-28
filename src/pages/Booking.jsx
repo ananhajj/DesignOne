@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Clock, User, Phone, Mail, MessageCircle, CheckCircle } from "lucide-react";
-
+import EditableText from "../cms/Editable/EditableText";
+import emailjs from "emailjs-com";
 export default function Booking() {
     const [formData, setFormData] = useState({
         name: "",
@@ -37,10 +38,33 @@ export default function Booking() {
         "05:00 مساءً",
     ];
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: إرسال البيانات للسيرفر / البريد
-        setIsSubmitted(true);
+
+        try {
+            const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+            const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+            const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+            const templateParams = {
+                name: formData.name,
+                phone: formData.phone,
+                email: formData.email || "-",          // عشان يظهر بـ Reply-To
+                caseType: formData.caseType,
+                preferredDate: formData.preferredDate,
+                preferredTime: formData.preferredTime,
+                contactMethod: formData.contactMethod,
+                message: formData.message || "-",
+                time: new Date().toLocaleString(),     // يوصلك مع الإيميل
+            };
+
+            await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+
+            setIsSubmitted(true); // يظهر شاشة النجاح
+        } catch (err) {
+            console.error("EmailJS Error:", err);
+            alert("تعذر إرسال الطلب، حاول لاحقًا.");
+        }
     };
 
     const handleInputChange = (e) => {
@@ -81,13 +105,7 @@ export default function Booking() {
                         </ul>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <a
-                            href="https://wa.me/966501234567"
-                            className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-primary to-accent-500 text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                        >
-                            <MessageCircle className="w-4 h-4 ml-2" />
-                            تواصل عبر واتساب
-                        </a>
+                
                         <button
                             onClick={() => setIsSubmitted(false)}
                             className="px-6 py-3 text-primary font-semibold hover:text-accent-600 transition-colors duration-300"
@@ -101,19 +119,24 @@ export default function Booking() {
     }
 
     return (
-        <div dir="rtl" className="pt-20">
+        <div dir="rtl" className="pt-20 bg-neutral-50">
             {/* Hero */}
             <section className="py-20 bg-gradient-to-br from-neutral-50 to-white">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                         <h1 className="text-5xl font-extrabold text-neutral-900 mb-6">
-                            احجز استشارة
+                           
+                            <EditableText k="booking.hero.title.top" fallback="احجز استشارة" />
+                            
                             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent-500">
-                                مع المحامية سارة الأحمد
+                               
+                                <EditableText k="booking.hero.title.bottom" fallback="مع المحامية سارة الأحمد" />
                             </span>
                         </h1>
                         <p className="text-xl text-neutral-600 leading-relaxed">
-                            استشارة شاملة لفهم قضيتك وتحديد أفضل الخيارات القانونية المتاحة
+                         
+                            <EditableText k="booking.hero.subtitle" fallback="استشارة شاملة لفهم قضيتك وتحديد أفضل الخيارات القانونية المتاحة" />
+                            
                         </p>
                     </motion.div>
                 </div>
@@ -127,8 +150,12 @@ export default function Booking() {
                             {/* Form */}
                             <div className="p-8 lg:p-12">
                                 <div className="mb-8">
-                                    <h2 className="text-3xl font-extrabold text-neutral-900 mb-2">بيانات الحجز</h2>
-                                    <p className="text-neutral-600 text-sm">يرجى ملء البيانات التالية لحجز موعد استشارتك</p>
+                                    <h2 className="text-3xl font-extrabold text-neutral-900 mb-2">
+                                        <EditableText k="booking.form.title" fallback="بيانات الحجز" />
+                                    </h2>
+                                    <p className="text-neutral-600 text-sm">
+                                        <EditableText k="booking.form.subtitle" fallback="يرجى ملء البيانات التالية لحجز موعد استشارتك" />
+                                    </p>
                                 </div>
 
                                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -136,7 +163,8 @@ export default function Booking() {
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-semibold text-neutral-900 mb-2">
-                                                الاسم الكامل <span className="text-accent-600">*</span>
+                                                <EditableText k="booking.form.name.label" fallback="الاسم الكامل" />{" "}
+                                                <span className="text-accent-600">*</span>
                                             </label>
                                             <input
                                                 type="text"
@@ -145,13 +173,14 @@ export default function Booking() {
                                                 value={formData.name}
                                                 onChange={handleInputChange}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                                placeholder="اكتب اسمك الكامل"
+                                                placeholder="اكتب اسمك الكامل" // ثابت
                                             />
                                         </div>
 
                                         <div>
                                             <label className="block text-sm font-semibold text-neutral-900 mb-2">
-                                                رقم الهاتف <span className="text-accent-600">*</span>
+                                                <EditableText k="booking.form.phone.label" fallback="رقم الهاتف" />{" "}
+                                                <span className="text-accent-600">*</span>
                                             </label>
                                             <input
                                                 type="tel"
@@ -160,28 +189,31 @@ export default function Booking() {
                                                 value={formData.phone}
                                                 onChange={handleInputChange}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                                placeholder="05xxxxxxxx"
+                                                placeholder="07xxxxxxxx" // ثابت
                                             />
                                         </div>
                                     </div>
 
                                     {/* Email */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-neutral-900 mb-2">البريد الإلكتروني</label>
+                                        <label className="block text-sm font-semibold text-neutral-900 mb-2">
+                                            <EditableText k="booking.form.email.label" fallback="البريد الإلكتروني" />
+                                        </label>
                                         <input
                                             type="email"
                                             name="email"
                                             value={formData.email}
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                            placeholder="example@email.com"
+                                            placeholder="example@email.com" // ثابت
                                         />
                                     </div>
 
                                     {/* Case Type */}
                                     <div>
                                         <label className="block text-sm font-semibold text-neutral-900 mb-2">
-                                            نوع القضية <span className="text-accent-600">*</span>
+                                            <EditableText k="booking.form.caseType.label" fallback="نوع القضية" />{" "}
+                                            <span className="text-accent-600">*</span>
                                         </label>
                                         <select
                                             name="caseType"
@@ -190,7 +222,7 @@ export default function Booking() {
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                                         >
-                                            <option value="">اختر نوع القضية</option>
+                                            <option value="">اختر نوع القضية</option> {/* ثابت */}
                                             {caseTypes.map((type) => (
                                                 <option key={type} value={type}>
                                                     {type}
@@ -203,7 +235,8 @@ export default function Booking() {
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-semibold text-neutral-900 mb-2">
-                                                التاريخ المفضل <span className="text-accent-600">*</span>
+                                                <EditableText k="booking.form.date.label" fallback="التاريخ المفضل" />{" "}
+                                                <span className="text-accent-600">*</span>
                                             </label>
                                             <input
                                                 type="date"
@@ -218,7 +251,8 @@ export default function Booking() {
 
                                         <div>
                                             <label className="block text-sm font-semibold text-neutral-900 mb-2">
-                                                الوقت المفضل <span className="text-accent-600">*</span>
+                                                <EditableText k="booking.form.time.label" fallback="الوقت المفضل" />{" "}
+                                                <span className="text-accent-600">*</span>
                                             </label>
                                             <select
                                                 name="preferredTime"
@@ -227,7 +261,7 @@ export default function Booking() {
                                                 onChange={handleInputChange}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                                             >
-                                                <option value="">اختر الوقت</option>
+                                                <option value="">اختر الوقت</option> {/* ثابت */}
                                                 {timeSlots.map((slot) => (
                                                     <option key={slot} value={slot}>
                                                         {slot}
@@ -239,7 +273,9 @@ export default function Booking() {
 
                                     {/* Contact Method */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-neutral-900 mb-2">طريقة التواصل المفضلة</label>
+                                        <label className="block text-sm font-semibold text-neutral-900 mb-2">
+                                            <EditableText k="booking.form.contactMethod.label" fallback="طريقة التواصل المفضلة" />
+                                        </label>
                                         <div className="flex gap-6 text-sm">
                                             <label className="inline-flex items-center gap-2">
                                                 <input
@@ -251,7 +287,7 @@ export default function Booking() {
                                                     className="text-primary focus:ring-primary"
                                                 />
                                                 <Phone className="w-4 h-4" />
-                                                مكالمة هاتفية
+                                                <EditableText k="booking.form.contactMethod.phone" fallback="مكالمة هاتفية" />
                                             </label>
                                             <label className="inline-flex items-center gap-2">
                                                 <input
@@ -263,7 +299,7 @@ export default function Booking() {
                                                     className="text-primary focus:ring-primary"
                                                 />
                                                 <MessageCircle className="w-4 h-4" />
-                                                واتساب
+                                                <EditableText k="booking.form.contactMethod.whatsapp" fallback="واتساب" />
                                             </label>
                                             <label className="inline-flex items-center gap-2">
                                                 <input
@@ -275,21 +311,23 @@ export default function Booking() {
                                                     className="text-primary focus:ring-primary"
                                                 />
                                                 <Mail className="w-4 h-4" />
-                                                بريد إلكتروني
+                                                <EditableText k="booking.form.contactMethod.email" fallback="بريد إلكتروني" />
                                             </label>
                                         </div>
                                     </div>
 
                                     {/* Message */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-neutral-900 mb-2">تفاصيل القضية أو الاستشارة</label>
+                                        <label className="block text-sm font-semibold text-neutral-900 mb-2">
+                                            <EditableText k="booking.form.message.label" fallback="تفاصيل القضية أو الاستشارة" />
+                                        </label>
                                         <textarea
                                             name="message"
                                             rows={4}
                                             value={formData.message}
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"
-                                            placeholder="اكتب تفاصيل موجزة عن قضيتك أو الاستشارة المطلوبة..."
+                                            placeholder="اكتب تفاصيل موجزة عن قضيتك أو الاستشارة المطلوبة..." // ثابت
                                         />
                                     </div>
 
@@ -301,7 +339,7 @@ export default function Booking() {
                                         whileTap={{ scale: 0.98 }}
                                     >
                                         <Calendar className="w-5 h-5 ml-3" />
-                                        تأكيد الحجز
+                                        <EditableText k="booking.form.submit" fallback="تأكيد الحجز" />
                                     </motion.button>
                                 </form>
                             </div>
@@ -309,9 +347,14 @@ export default function Booking() {
                             {/* Side Info */}
                             <div className="bg-gradient-to-br from-neutral-900 to-slate-800 p-8 lg:p-12 text-white">
                                 <div className="mb-8">
-                                    <h3 className="text-2xl font-extrabold mb-4 text-white" >معلومات الاستشارة</h3>
+                                    <h3 className="text-2xl font-extrabold mb-4 text-white">
+                                        <EditableText k="booking.sideInfo.title" fallback="معلومات الاستشارة" />
+                                    </h3>
                                     <p className="text-neutral-300 leading-relaxed">
-                                        استشارة مفصلة لفهم قضيتك وتقديم النصح القانوني المناسب — حضوريًا أو عن بُعد.
+                                        <EditableText
+                                            k="booking.sideInfo.description"
+                                            fallback="استشارة مفصلة لفهم قضيتك وتقديم النصح القانوني المناسب — حضوريًا أو عن بُعد."
+                                        />
                                     </p>
                                 </div>
 
@@ -319,41 +362,54 @@ export default function Booking() {
                                     <div className="flex items-center gap-4">
                                         <Clock className="w-6 h-6 text-accent-500" />
                                         <div>
-                                            <div className="font-semibold">مدة الاستشارة</div>
-                                            <div className="text-sm text-neutral-300">60 دقيقة شاملة</div>
+                                            <div className="font-semibold">
+                                                <EditableText k="booking.sideInfo.duration.label" fallback="مدة الاستشارة" />
+                                            </div>
+                                            <div className="text-sm text-neutral-300">
+                                                <EditableText k="booking.sideInfo.duration.value" fallback="60 دقيقة شاملة" />
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-4">
                                         <User className="w-6 h-6 text-accent-500" />
                                         <div>
-                                            <div className="font-semibold">نوع الاستشارة</div>
-                                            <div className="text-sm text-neutral-300">مقابلة شخصية أو عن بُعد</div>
+                                            <div className="font-semibold">
+                                                <EditableText k="booking.sideInfo.type.label" fallback="نوع الاستشارة" />
+                                            </div>
+                                            <div className="text-sm text-neutral-300">
+                                                <EditableText k="booking.sideInfo.type.value" fallback="مقابلة شخصية أو عن بُعد" />
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-4">
                                         <CheckCircle className="w-6 h-6 text-accent-500" />
                                         <div>
-                                            <div className="font-semibold">ما يشمله</div>
-                                            <div className="text-sm text-neutral-300">تحليل قانوني + خطة عمل مقترحة</div>
+                                            <div className="font-semibold">
+                                                <EditableText k="booking.sideInfo.includes.label" fallback="ما يشمله" />
+                                            </div>
+                                            <div className="text-sm text-neutral-300">
+                                                <EditableText k="booking.sideInfo.includes.value" fallback="تحليل قانوني + خطة عمل مقترحة" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="mt-8 p-4 rounded-xl border border-white/10 bg-white/5 text-center">
                                     <p className="text-sm">
-                                        <strong>سياسة الخصوصية:</strong> جميع المعلومات محفوظة ومحمية وفقًا لأعلى معايير السرية المهنية.
+                                        <strong>
+                                            <EditableText k="booking.sideInfo.privacy.label" fallback="سياسة الخصوصية:" />
+                                        </strong>{" "}
+                                        <EditableText
+                                            k="booking.sideInfo.privacy.value"
+                                            fallback="جميع المعلومات محفوظة ومحمية وفقًا لأعلى معايير السرية المهنية."
+                                        />
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* WhatsApp floater (اختياري) */}
-                    {/* <a href="https://wa.me/966501234567" target="_blank" rel="noreferrer" className="fixed bottom-6 left-6 inline-flex items-center gap-2 rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-1 ring-black/5">
-            <MessageCircle className="w-5 h-5" /> واتساب
-          </a> */}
                 </div>
             </section>
         </div>

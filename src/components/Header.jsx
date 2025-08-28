@@ -1,25 +1,31 @@
-import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Calendar, Menu, X } from "lucide-react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Scale, Calendar, Menu, X } from "lucide-react";
+
+import { useContent } from "../cms/ContentProvider"; // غيّر المسار لو لزم
+import EditableImage from "../cms/Editable/EditableImage";
+import EditableText from "../cms/Editable/EditableText"; // غيّر المسار لو لزم
 
 export default function Header() {
     const location = useLocation();
     const [open, setOpen] = useState(false);
 
-    const navigation = [
-        { name: "الرئيسية", href: "/" },
-        { name: "عن المحامية", href: "/about" },
-        { name: "الخدمات", href: "/services" },
-        { name: "أعمال مختارة", href: "/cases" },
-        { name: "الإعلام", href: "/media" },
-        { name: "تواصل", href: "/contact" },
+    // blockNav يمنع التنقل أثناء وضع التحرير
+    const { editMode, isAdmin } = useContent();
+    const blockNav = editMode && isAdmin;
+
+    const navItems = [
+        { key: "nav.home", href: "/", fallback: "الرئيسية" },
+        { key: "nav.about", href: "/about", fallback: "عن المحامية" },
+        { key: "nav.services", href: "/services", fallback: "الخدمات" },
+        { key: "nav.cases", href: "/cases", fallback: "أعمال مختارة" },
+        { key: "nav.media", href: "/media", fallback: "الإعلام" },
+        { key: "nav.contact", href: "/contact", fallback: "تواصل" },
     ];
 
     const isActive = (href) =>
-        href === "/"
-            ? location.pathname === "/"
-            : location.pathname.startsWith(href);
+        href === "/" ? location.pathname === "/" : location.pathname.startsWith(href);
 
     return (
         <motion.header
@@ -33,32 +39,39 @@ export default function Header() {
         >
             <div className="container-pro h-16 flex items-center justify-between">
                 {/* Logo */}
-                <Link to="/" className="flex items-center gap-2">
-                    <span className="grid place-items-center rounded-xl bg-primary p-2 text-white">
-                        <Scale className="w-5 h-5" />
-                    </span>
-                    <span className="hidden sm:block text-right">
-                        <span className="block text-sm font-extrabold text-neutral-900">
-                            الأحمد والشركاه
-                        </span>
-                        <span className="block text-[11px] text-neutral-500">
-                            للمحاماة والاستشارات القانونية
-                        </span>
-                    </span>
+                <Link
+                    to="/"
+                    onClick={(e) => {
+                        if (blockNav) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                    }}
+                    className="flex items-center gap-2"
+                >
+                    <EditableImage
+                        k="brand.logo"
+                        fallback="/assets/brand/logo-icon.png"  
+                        alt="الشعار"
+                        className="h-20 sm:h-16 w-auto object-contain"
+                    />
                 </Link>
+
+
+
 
                 {/* Desktop Nav */}
                 <nav className="hidden lg:flex items-center gap-6 text-sm">
-                    {navigation.map((item) => (
+                    {navItems.map((item) => (
                         <Link
                             key={item.href}
                             to={item.href}
-                            className={`relative py-1 transition-colors ${isActive(item.href)
-                                    ? "text-primary"
-                                    : "text-neutral-800 hover:text-primary"
-                                }`}
+                            onClick={(e) => { if (blockNav) { e.preventDefault(); e.stopPropagation(); } }}
+                            className={`relative py-1 transition-colors ${isActive(item.href) ? "text-primary" : "text-neutral-800 hover:text-primary"
+                                } ${blockNav ? "cursor-not-allowed" : ""}`}
+                            aria-disabled={blockNav}
                         >
-                            {item.name}
+                            <EditableText k={item.key} fallback={item.fallback} />
                             {isActive(item.href) && (
                                 <motion.span
                                     layoutId="activeTab"
@@ -72,10 +85,13 @@ export default function Header() {
                 {/* CTA (Desktop) */}
                 <Link
                     to="/booking"
-                    className="hidden lg:inline-flex items-center rounded-full bg-gradient-to-r from-primary to-accent-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-md transition"
+                    onClick={(e) => { if (blockNav) { e.preventDefault(); e.stopPropagation(); } }}
+                    className={`hidden lg:inline-flex items-center rounded-full bg-gradient-to-r from-primary to-accent-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-md transition ${blockNav ? "cursor-not-allowed" : ""
+                        }`}
+                    aria-disabled={blockNav}
                 >
                     <Calendar className="w-4 h-4 ml-2" />
-                    احجز استشارة
+                    <EditableText k="cta.book" fallback="احجز استشارة" />
                 </Link>
 
                 {/* Mobile toggler */}
@@ -100,17 +116,21 @@ export default function Header() {
                     >
                         <div className="container-pro py-3">
                             <ul className="flex flex-col gap-1">
-                                {navigation.map((item) => (
+                                {navItems.map((item) => (
                                     <li key={item.href}>
                                         <Link
                                             to={item.href}
-                                            onClick={() => setOpen(false)}
-                                            className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${isActive(item.href)
-                                                    ? "text-primary bg-primary/5"
-                                                    : "text-neutral-800 hover:bg-neutral-100"
-                                                }`}
+                                            onClick={(e) => {
+                                                if (blockNav) { e.preventDefault(); e.stopPropagation(); }
+                                                else setOpen(false);
+                                            }}
+                                            className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${isActive(item.href) ? "text-primary bg-primary/5" : "text-neutral-800 hover:bg-neutral-100"
+                                                } ${blockNav ? "cursor-not-allowed" : ""}`}
+                                            aria-disabled={blockNav}
                                         >
-                                            <span>{item.name}</span>
+                                            <span>
+                                                <EditableText k={item.key} fallback={item.fallback} />
+                                            </span>
                                             {isActive(item.href) && (
                                                 <span className="h-1 w-10 rounded-full bg-gradient-to-r from-primary to-accent-500" />
                                             )}
@@ -122,11 +142,15 @@ export default function Header() {
                             <div className="mt-3">
                                 <Link
                                     to="/booking"
-                                    onClick={() => setOpen(false)}
-                                    className="btn btn-primary w-full rounded-xl"
+                                    onClick={(e) => {
+                                        if (blockNav) { e.preventDefault(); e.stopPropagation(); }
+                                        else setOpen(false);
+                                    }}
+                                    className={`btn btn-primary w-full rounded-xl ${blockNav ? "cursor-not-allowed" : ""}`}
+                                    aria-disabled={blockNav}
                                 >
                                     <Calendar className="w-4 h-4 ml-2" />
-                                    احجز استشارة
+                                    <EditableText k="cta.book" fallback="احجز استشارة" />
                                 </Link>
                             </div>
                         </div>

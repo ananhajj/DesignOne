@@ -3,7 +3,7 @@ const colors = require("tailwindcss/colors");
 
 module.exports = {
   darkMode: "class",
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./index.html","./src/components/Footer.jsx", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     container: {
       center: true,
@@ -12,24 +12,37 @@ module.exports = {
     },
     extend: {
       boxShadow: {
-        soft: "0 10px 25px rgba(16, 24, 40, 0.06)",  
+        soft: "0 10px 25px rgba(16, 24, 40, 0.06)",
       },
       colors: {
         primary: {
-          DEFAULT: "#7c533a",
-          50: "#f7f3f1",
-          100: "#efe7e2",
-          200: "#dfcfc5",
-          300: "#cfb7a8",
-          400: "#b78d74",
-          500: "#7c533a",
-          600: "#6f4b34",
-          700: "#5f3f2b",
-          800: "#503423",
-          900: "#3e2719",
+          DEFAULT: "#1E3A8A", // أزرق غامق
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6", // أزرق متوسط
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a", // الأساسي
         },
-        accent: colors.yellow,
-        neutral: colors.neutral,
+        accent: {
+          DEFAULT: "#3B82F6", // أزرق فاتح شوي
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+        },
+        neutral: colors.slate, // رمادي حديث ومتوازن
+        white: "#ffffff",
       },
       fontFamily: {
         sans: ["Cairo", "ui-sans-serif", "system-ui", "Segoe UI", "Arial"],
