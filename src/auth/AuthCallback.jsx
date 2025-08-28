@@ -7,24 +7,22 @@ export default function AuthCallback() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const finalize = async () => {
+        (async () => {
             try {
-                // استبدال الكود بجلسة مستخدم
-                const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
-
-                if (error) {
-                    console.error("Auth error:", error.message);
-                } else {
-                    console.log("Auth success:", data);
+                const url = new URL(window.location.href);
+                const hasCode = url.searchParams.get("code");
+                if (hasCode) {
+                    const { error } = await supabase.auth.exchangeCodeForSession(url.toString());
+                    if (error) console.error("Auth error:", error.message);
                 }
+                // نظّف الباراميترات من العنوان
+                window.history.replaceState({}, document.title, "/auth/callback");
             } catch (e) {
-                console.error("Unexpected error:", e);
+                console.error("Unexpected auth error:", e);
             } finally {
                 navigate("/", { replace: true });
             }
-        };
-
-        finalize();
+        })();
     }, [navigate]);
 
     return <p style={{ padding: 16 }}>جاري تسجيل الدخول…</p>;

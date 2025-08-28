@@ -16,11 +16,12 @@ export function AuthProvider({ children }) {
             setUser(session?.user || null);
             setLoading(false);
         })();
-        const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session || null);
             setUser(session?.user || null);
         });
-        return () => sub.subscription.unsubscribe();
+        return () => listener?.subscription?.unsubscribe?.();
     }, []);
 
     const signInWithOtp = (email) =>

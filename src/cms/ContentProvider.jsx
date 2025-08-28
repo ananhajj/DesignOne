@@ -1,6 +1,6 @@
+// src/cms/ContentProvider.jsx
 import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
-
 
 const ContentCtx = createContext(null);
 
@@ -10,7 +10,7 @@ export function ContentProvider({ children, initialLocale = "ar" }) {
     const [isAdmin, setIsAdmin] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [error, setErr] = useState(null);
+    const [error, setErr] = useState(null); // <-- مفقودة سابقًا
 
     useEffect(() => {
         (async () => {
@@ -42,13 +42,11 @@ export function ContentProvider({ children, initialLocale = "ar" }) {
     const get = (key, fallback) => {
         const v = content?.[key];
         if (v == null) return fallback ?? "";
-        // value ممكن يكون {text,url,image_url,html...}
         return v.text ?? v.url ?? v.image_url ?? v.html ?? v;
     };
 
     const set = async (key, value) => {
         if (!isAdmin) return { error: new Error("Not admin") };
-
         const { data: { user } } = await supabase.auth.getUser();
         const payload = { key, locale, value, updated_by: user?.id };
 
@@ -59,7 +57,6 @@ export function ContentProvider({ children, initialLocale = "ar" }) {
         if (!error) setContent((prev) => ({ ...prev, [key]: value }));
         return { error };
     };
-
 
     const reload = async () => {
         const { data } = await supabase
