@@ -35,11 +35,11 @@ const DEFAULT_LEGAL = [
 ];
 
 const DEFAULT_PHONES = [
-    { id: uid(), value: "+966 11 123 4567", link: "tel:+966111234567" },
+    { id: uid(), value: "00962 7 9223 6366", link: "" },
 ];
 
 const DEFAULT_EMAILS = [
-    { id: uid(), value: "sara@alahmedlaw.com", link: "mailto:sara@alahmedlaw.com" },
+    { id: uid(), value: "sara@alahmedlaw.com", link: "" },
 ];
 
 const DEFAULT_ADDRESS = [
@@ -47,7 +47,7 @@ const DEFAULT_ADDRESS = [
     { id: uid(), value: "طريق الملك فهد" },
 ];
 
-/* -------------------- Toolbar (Add/Save + Status) -------------------- */
+/* -------------------- Editor Toolbar -------------------- */
 function EditorToolbar({ onAdd, onSave, title, status, saving }) {
     return (
         <div className="sticky top-2 z-20 -mx-2 mb-3 px-2 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex flex-wrap items-center gap-2">
@@ -105,6 +105,72 @@ function MoveDelButtons({ onUp, onDown, onDel }) {
     );
 }
 
+/* -------------------- Phone/Email Helpers -------------------- */
+// تحويل أرقام عربية -> لاتينية
+function toLatinDigits(str = "") {
+    const map = { "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4", "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9" };
+    return str.replace(/[٠-٩]/g, (d) => map[d] || d);
+}
+// تنظيف رقم الهاتف وتحويل 00 -> +
+function normalizePhone(raw = "") {
+    const v = toLatinDigits(raw).trim();
+    // أزل كل ما عدا الأرقام و"+" (وابقِ على + في المقدمة فقط)
+    let cleaned = v.replace(/[^\d+]/g, "");
+    if (cleaned.startsWith("00")) cleaned = `+${cleaned.slice(2)}`;
+    cleaned = cleaned.replace(/(?!^)\+/g, "");
+    return cleaned;
+}
+// LRM mark لتثبيت اتجاه LTR
+const LRM = "\u200E";
+
+// تنسيق عرض رقمي (لا يؤثر على الرابط)
+function formatPhoneDisplay(raw = "") {
+    const tel = normalizePhone(raw);      // مثل +962792236366
+    const m = /^\+?(\d{1,3})(\d+)$/.exec(tel.replace(/^tel:/, ""));
+    if (!m) return raw.trim();
+
+    const cc = m[1];        // country code
+    const rest = m[2];      // بقية الرقم
+
+    // تنسيق مُخصص للأردن: +962 7 XXX XXXX
+    if (cc === "962" && /^7\d{8}$/.test(rest)) {
+        return `+962 7 ${rest.slice(1, 4)} ${rest.slice(4)}`;
+    }
+
+    // fallback عام: +CC rest مفصول كل 3 من اليمين
+    const grouped = rest.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return `+${cc} ${grouped}`;
+}
+
+function autoLink(value, link, iconName) {
+    const vRaw = (value || "").trim();
+    const l = (link || "").trim();
+    if (l) return l;
+
+    const v = toLatinDigits(vRaw);
+    const isEmail = v.includes("@");
+    const looksLikePhone = /[+\d]/.test(v);
+    const isURL = /^https?:\/\//i.test(v) || /^www\./i.test(v);
+
+    if (isEmail) return `mailto:${v}`;
+
+    // هاتف: إن كان الأيقونة Phone أو النص يبدو رقماً، ابنِ tel:
+    if (iconName === "Phone" || (!isURL && looksLikePhone)) {
+        const phone = normalizePhone(v);
+        if (/\d{6,}/.test(phone.replace(/\D/g, ""))) {
+            return `tel:${phone}`;
+        }
+    }
+
+    // واتساب مختصر
+    if (/^(wa\.me|https?:\/\/wa\.me)/i.test(v)) {
+        return v.startsWith("http") ? v : `https://${v}`;
+    }
+
+    if (isURL) return v.startsWith("http") ? v : `https://${v}`;
+    return "";
+}
+
 /* -------------------- Editable Links (name, href) -------------------- */
 function EditableLinksList({ k, fallback = [], layout = "column", className = "" }) {
     const { get, set, editMode, isAdmin } = useContent();
@@ -116,7 +182,7 @@ function EditableLinksList({ k, fallback = [], layout = "column", className = ""
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState("");
 
-    // ⬅️ Sync when storage changes (e.g., after async fetch or another save)
+    // Sync with storage updates
     useEffect(() => {
         setItems(asArray(stored, fallback));
     }, [stored, fallback]);
@@ -135,13 +201,14 @@ function EditableLinksList({ k, fallback = [], layout = "column", className = ""
     const saveAll = async () => {
         setSaving(true);
         setStatus("جارٍ الحفظ...");
-        const clean = items.map(x => ({ id: x.id || uid(), name: x.name || "", href: x.href || "#" }));
+        const clean = items
+            .map(x => ({ id: x.id || uid(), name: (x.name || "").trim(), href: (x.href || "").trim() }))
+            .filter(x => x.name || x.href);
         const { error } = await set(k, { items: clean });
         if (error) {
             setStatus("فشل الحفظ: " + error.message);
         } else {
             setStatus("تم الحفظ");
-            // اختياري: إعادة مزامنة (لو set() لا يعيد بث)
             setItems(clean);
             setTimeout(() => setStatus(""), 2000);
         }
@@ -243,7 +310,9 @@ function EditableTextList({ k, fallback = [], className = "" }) {
     const saveAll = async () => {
         setSaving(true);
         setStatus("جارٍ الحفظ...");
-        const clean = items.map(x => ({ id: x.id || uid(), value: (x.value || "").trim() }));
+        const clean = items
+            .map(x => ({ id: x.id || uid(), value: (x.value || "").trim() }))
+            .filter(x => x.value);
         const { error } = await set(k, { items: clean });
         if (error) {
             setStatus("فشل الحفظ: " + error.message);
@@ -293,28 +362,6 @@ function EditableTextList({ k, fallback = [], className = "" }) {
     );
 }
 
-/* -------------------- Helpers -------------------- */
-function autoLink(value, link, iconName) {
-    const v = (value || "").trim();
-    const l = (link || "").trim();
-    if (l) return l;
-
-    const isEmail = v.includes("@");
-    const isPhone = /^[+0-9\s-()]+$/.test(v);
-    const isURL = /^https?:\/\//i.test(v) || /^www\./i.test(v);
-
-    if (isEmail) return `mailto:${v}`;
-    if (isPhone) return `tel:${v.replace(/\s+/g, "")}`;
-    if (/^(\+?966)?\d/.test(v) && iconName === "Phone") return `tel:${v.replace(/\s+/g, "")}`;
-    if (iconName === "Mail" && !isURL && !isPhone) return `mailto:${v}`;
-
-    if (/^(wa\.me|https?:\/\/wa\.me)/i.test(v)) {
-        return v.startsWith("http") ? v : `https://${v}`;
-    }
-    if (isURL) return v.startsWith("http") ? v : `https://${v}`;
-    return "";
-}
-
 /* -------------------- Editable Contact List ({value, link}) -------------------- */
 function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "" }) {
     const { get, set, editMode, isAdmin } = useContent();
@@ -344,10 +391,12 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
     const saveAll = async () => {
         setSaving(true);
         setStatus("جارٍ الحفظ...");
-        const clean = items.map(x => {
-            const link = autoLink(x.value, x.link, kind);
-            return { id: x.id || uid(), value: x.value || "", link };
-        });
+        const clean = items
+            .map(x => {
+                const link = autoLink(x.value, x.link, kind);
+                return { id: x.id || uid(), value: (x.value || "").trim(), link: (link || "").trim() };
+            })
+            .filter(x => x.value);
         const { error } = await set(k, { items: clean });
         if (error) {
             setStatus("فشل الحفظ: " + error.message);
@@ -364,19 +413,33 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
             <ul className={`space-y-3 text-sm text-primary-100 min-w-0 ${className}`}>
                 {items.map((it) => {
                     const href = autoLink(it.value, it.link, kind);
+                    const display =
+                        kind === "Phone" ? formatPhoneDisplay(it.value) : (it.value || "—");
+
                     return (
                         <li key={it.id} className="flex items-center gap-3 min-w-0">
                             <Icon className="w-4 h-4 text-accent-500 flex-shrink-0" />
                             {href ? (
-                                <a href={href} className="text-white hover:text-accent-500 transition truncate" title={it.value}>
-                                    {it.value || "—"}
+                                <a
+                                    href={href}
+                                    className="text-white hover:text-accent-500 transition truncate inline-flex items-center"
+                                    title={display}
+                                >
+                                    {/* bdi + LRM لتثبيت اتجاه LTR */}
+                                    <bdi dir="ltr" className="inline-block">{display}{LRM}</bdi>
                                 </a>
                             ) : (
-                                <span className="truncate" title={it.value}>{it.value || "—"}</span>
+                                <span
+                                    className="truncate inline-flex items-center"
+                                    title={display}
+                                >
+                                    <bdi dir="ltr" className="inline-block">{display}{LRM}</bdi>
+                                </span>
                             )}
                         </li>
                     );
                 })}
+
             </ul>
         );
     }
@@ -415,14 +478,8 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
 
 /* -------------------- Footer -------------------- */
 export default function Footer() {
-    const { editMode, isAdmin, get } = useContent();
+    const { editMode, isAdmin } = useContent();
     const canEdit = editMode && isAdmin;
-
-    const quickStored = get("footer.quick", { items: DEFAULT_QUICK });
-    const legalStored = get("footer.legal", { items: DEFAULT_LEGAL });
-    const phonesStored = get("footer.phones", { items: DEFAULT_PHONES });
-    const emailsStored = get("footer.emails", { items: DEFAULT_EMAILS });
-    const addrStored = get("footer.address", { items: DEFAULT_ADDRESS });
 
     return (
         <footer dir="rtl" className="bg-gradient-to-br from-primary-900 to-primary-700 text-white">
@@ -470,7 +527,7 @@ export default function Footer() {
                             </h4>
                             <EditableLinksList
                                 k="footer.quick"
-                                fallback={asArray(quickStored, DEFAULT_QUICK)}
+                                fallback={DEFAULT_QUICK}
                                 layout="column"
                             />
                         </nav>
@@ -483,7 +540,7 @@ export default function Footer() {
 
                             <EditableContactList
                                 k="footer.phones"
-                                fallback={asArray(phonesStored, DEFAULT_PHONES)}
+                                fallback={DEFAULT_PHONES}
                                 icon={Phone}
                                 kind="Phone"
                             />
@@ -491,7 +548,7 @@ export default function Footer() {
                             <div className="mt-4 text-white">
                                 <EditableContactList
                                     k="footer.emails"
-                                    fallback={asArray(emailsStored, DEFAULT_EMAILS)}
+                                    fallback={DEFAULT_EMAILS}
                                     icon={Mail}
                                     kind="Mail"
                                 />
@@ -501,7 +558,7 @@ export default function Footer() {
                                 <MapPin className="w-4 h-4 text-accent-500 flex-shrink-0 mt-0.5" />
                                 <EditableTextList
                                     k="footer.address"
-                                    fallback={asArray(addrStored, DEFAULT_ADDRESS)}
+                                    fallback={DEFAULT_ADDRESS}
                                 />
                             </div>
                         </div>
@@ -513,7 +570,7 @@ export default function Footer() {
                     <div className="flex flex-wrap justify-center gap-6">
                         <EditableLinksList
                             k="footer.legal"
-                            fallback={asArray(legalStored, DEFAULT_LEGAL)}
+                            fallback={DEFAULT_LEGAL}
                             layout="row"
                             className="text-xs text-primary-200"
                         />
@@ -524,11 +581,11 @@ export default function Footer() {
                 <div className="py-6 border-t border-white/10 text-center">
                     <p className="text-sm text-primary-200 mb-1">
                         © {new Date().getFullYear()}{" "}
-                        <EditableText k="footer.bottom.name" fallback="مكتب الأحمد والشركاه للمحاماة" />.{" "}
+                        <EditableText k="footer.bottom.name" fallback="مكتب المستشارون للمحاماة" />{" "}
                         <EditableText k="footer.bottom.rights" fallback="جميع الحقوق محفوظة." />
                     </p>
                     <p className="text-xs text-primary-300">
-                        <EditableText k="footer.bottom.license" fallback="مرخّص من نقابة المحامين السعوديين • رقم الترخيص: 12345" />
+                        <EditableText k="footer.bottom.license" fallback="" />
                     </p>
                 </div>
             </div>

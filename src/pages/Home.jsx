@@ -44,10 +44,10 @@ export default function Home() {
                 <div className="container-pro py-16 md:py-24 grid gap-12 lg:grid-cols-2 items-center">
                     <motion.div initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-neutral-900">
-                            <EditableText k="hero.title.line1" fallback="القانون بعيون إنسانية،" />
+                            <EditableText k="hero.title.line1" fallback="القانون بخبرة" />
                             <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent-500">
-                                <EditableText k="hero.title.line2" fallback="وخبرة تصنع فارقًا" />
+                                <EditableText k="hero.title.line2" fallback="تصنع الفارق" />
                             </span>
                         </h1>
 
@@ -70,7 +70,7 @@ export default function Home() {
 
                             <EditableLink
                                 k="hero.cta.secondary"
-                                fallbackText="تعرّف على أسلوبي"
+                                fallbackText="تعرّف على أسلوبنا"
                                 fallbackUrl="/about"
                                 className="btn btn-outline btn-lg rounded-full"
                             />
