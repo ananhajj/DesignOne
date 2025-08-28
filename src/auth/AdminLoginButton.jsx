@@ -14,7 +14,7 @@ export default function AdminLoginButton() {
     // اختصار لوحة مفاتيح لإظهار الزر/المودال بدون ما يبين للكل
     useEffect(() => {
         const onKey = (e) => {
-            if (e.shiftKey && e.key.toLowerCase() === "a") {
+            if (e.shiftKey && e.code === "KeyA") {
                 setVisible((v) => !v);
             }
         };
