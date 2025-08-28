@@ -35,16 +35,16 @@ const DEFAULT_LEGAL = [
 ];
 
 const DEFAULT_PHONES = [
-    { id: uid(), value: "00962 7 9223 6366", link: "" },
+    { id: uid(), value: "+962 7 9626 0618", link: "" },
 ];
 
 const DEFAULT_EMAILS = [
-    { id: uid(), value: "sara@alahmedlaw.com", link: "" },
+    { id: uid(), value: "ghofransaifi@outlook.com", link: "" },
 ];
 
 const DEFAULT_ADDRESS = [
-    { id: uid(), value: "الرياض، حي العليا" },
-    { id: uid(), value: "طريق الملك فهد" },
+    { id: uid(), value:  "عمان - دوار الواحة" },
+    { id: uid(), value: "شارع وصفي التل" },
 ];
 
 /* -------------------- Editor Toolbar -------------------- */
