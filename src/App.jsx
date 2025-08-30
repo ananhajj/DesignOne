@@ -30,15 +30,13 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen bg-[#FAF7F2] text-[#0F172A] font-sans">
+      <div className="min-h-screen text-[#0F172A] font-sans">
         <Header />
      
 
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            
-      
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
             <Route path="/cases" element={<Cases />} />
