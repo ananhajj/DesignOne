@@ -101,13 +101,13 @@ export default function About() {
                         <h2 className="text-4xl font-extrabold text-neutral-900 mb-8">
                             <EditableText k="about.vision.title" fallback="الرؤية المهنية" />
                         </h2>
-                        <blockquote
-                            className="text-2xl text-neutral-600 italic leading-relaxed border-r-4 pr-6"
-                            style={{
-                                borderImage:
-                                    "linear-gradient(to bottom, var(--tw-gradient-from,#7c533a), var(--tw-gradient-to,#eab308)) 1",
-                            }}
-                        >
+                            <blockquote
+                                className="text-2xl text-neutral-700 italic leading-relaxed border-r-4 pr-6 border-transparent"
+                                style={{
+                                    borderImage:
+                                        "linear-gradient(to bottom, var(--tw-gradient-from, #1e3a8a), var(--tw-gradient-to, #3b82f6)) 1",
+                                }}
+                            >
                             “
                             <EditableLongText
                                 k="about.vision.quote"

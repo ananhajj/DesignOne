@@ -24,6 +24,7 @@ import EditableFAQ from "../cms/Editable/EditableFAQ";
 export default function Home() {
     // ملاحظة: أرقام/قوائم تحولت لمفاتيح نصية منفصلة لتقدر تعدل كل عنصر
     return (
+        
         <div dir="rtl" className="pt-16">
             {/* Announcement Bar */}
             <div className="hidden sm:block bg-primary/10 text-primary text-sm">
@@ -218,7 +219,7 @@ export default function Home() {
             </HideableSection>
 
             <HideableSection k="home.processTimeline"  >
-                <div className="container-pro">
+                <div className="container-pro bg-neutral-50">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl font-extrabold text-neutral-900">
                             <EditableText k="process.title" fallback="خطوتنا معك" />
