@@ -471,24 +471,18 @@ export default function Contact() {
                             <EditableText k="contact.map.title" fallback="الموقع على الخريطة" />
                         </h2>
                         <p className="text-xl text-neutral-600">
-                            <EditableText
-                                k="contact.map.subtitle"
-                                fallback="مكتب الأحمد والشركاه للمحاماة — الرياض"
-                            />
+                            <EditableText k="contact.map.subtitle" fallback="مكتب المستشارون للقانون للمحاماة — عمان" />
                         </p>
                     </motion.div>
 
-                    <motion.div
-                        className="relative h-96 rounded-3xl overflow-hidden shadow-soft border border-primary/10 bg-gradient-to-br from-primary to-accent-500"
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        <EditableMap k="contact.map" />
-                    </motion.div>
+                    {/* ✨ غلاف ثابت (بدون scale) */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-soft border border-primary/10">
+                        {/* الخريطة: ارتفاع فقط، بدون radius/overflow (صار بالغلاف) */}
+                        <EditableMap k="contact.map" className="h-[22rem] md:h-[28rem]" />
+                    </div>
                 </div>
             </section>
+
 
             {/* Final CTA */}
             <section className="relative py-20 bg-gradient-to-br from-primary-700 via-primary-800 to-primary-900 text-white overflow-hidden">

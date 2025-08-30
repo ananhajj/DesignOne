@@ -1,35 +1,35 @@
+// src/cms/Editable/EditableMap.jsx
 import React, { useMemo, useState } from "react";
 import { useContent } from "../ContentProvider";
 import { Save, MapPin, Link as LinkIcon, Target } from "lucide-react";
 
-/**
- * يدعم طريقتين للتخزين:
- * 1) وضع "url": نخزن embedSrc كما هو (أسهل وأسرع).
- * 2) وضع "coords": نخزن lat/lng/zoom/placeQuery ونبني الـ URL تلقائياً.
- */
 const buildEmbedFromCoords = ({ lat, lng, zoom = 14, placeQuery = "" }) => {
-    // أبسط تضمين يعتمد على query أو lat,lng
-    // ملاحظة: هذا ليس Google Maps Embed API الرسمي بمفتاح، لكنه يعمل للعرض البسيط
-    const q = placeQuery?.trim()
-        ? encodeURIComponent(placeQuery.trim())
-        : `${lat},${lng}`;
-    return `https://www.google.com/maps?q=${q}&hl=ar&z=${zoom}&output=embed`;
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+    const q = (placeQuery || "").trim();
+    const query = q ? encodeURIComponent(q) : (hasCoords ? `${lat},${lng}` : "");
+    return query
+        ? `https://www.google.com/maps?q=${query}&hl=ar&z=${zoom}&output=embed`
+        : "";
+};
+
+const toNum = (v, def) => {
+    const n = typeof v === "string" ? parseFloat(v) : v;
+    return Number.isFinite(n) ? n : def;
 };
 
 export default function EditableMap({
     k = "contact.map",
-    className = "relative h-96 rounded-3xl overflow-hidden shadow-soft border border-primary/10",
-    // قيمة افتراضية (مطابقة اللي عندك حالياً)
+    className = "h-[22rem] md:h-[28rem]",
     fallback = {
-        mode: "url", // "url" | "coords"
+        mode: "url",
         embedSrc:
-            "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3384.3875999765137!2d35.84070507638613!3d31.977506674007937!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151ca19bc3e1d1ed%3A0xc7b138ad3619f9b8!2sMecca%20Mall!5e0!3m2!1sen!2sjo!4v1756390992046!5m2!1sen!2sjo",
-        address: "حي العليا، طريق الملك فهد، الرياض",
-        // لو اخترت وضع coords
-        lat: 31.9775067,
-        lng: 35.8407050,
+            "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3383.904423668541!2d35.86918609999999!3d31.9906063!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151ca182a485c5e9%3A0x4538604559d1ade1!2z2YXYrNmF2Lkg2KfZhNiu2YHYrNmKINiv2YjYp9ixINin2YTZiNin2K3YqQ!5e0!3m2!1sen!2sjo!4v1756407956111!5m2!1sen!2sjo",
+        address: "عمان - دوار الواحة شارع وصفي التل",
+     
+        lat: 31.9906063,
+        lng: 35.8691861,
         zoom: 14,
-        placeQuery: "Mecca Mall Amman",
+        placeQuery: "عمان - دوار الواحة شارع وصفي التل",
     },
 }) {
     const { get, set, editMode, isAdmin } = useContent();
@@ -38,15 +38,14 @@ export default function EditableMap({
     const stored = get(k, fallback);
 
     const initial = useMemo(() => {
-        // قبول أشكال قديمة أو ناقصة
         const mode = stored?.mode === "coords" ? "coords" : "url";
         return {
             mode,
             embedSrc: stored?.embedSrc || fallback.embedSrc,
             address: stored?.address ?? fallback.address,
-            lat: typeof stored?.lat === "number" ? stored.lat : fallback.lat,
-            lng: typeof stored?.lng === "number" ? stored.lng : fallback.lng,
-            zoom: typeof stored?.zoom === "number" ? stored.zoom : fallback.zoom,
+            lat: toNum(stored?.lat, fallback.lat),
+            lng: toNum(stored?.lng, fallback.lng),
+            zoom: toNum(stored?.zoom, fallback.zoom),
             placeQuery: stored?.placeQuery ?? fallback.placeQuery,
         };
     }, [stored]);
@@ -60,32 +59,35 @@ export default function EditableMap({
     const [placeQuery, setPlaceQuery] = useState(initial.placeQuery);
     const [saving, setSaving] = useState(false);
 
+    const coordsSrc = buildEmbedFromCoords({ lat, lng, zoom, placeQuery });
     const previewSrc =
         mode === "coords"
-            ? buildEmbedFromCoords({ lat, lng, zoom, placeQuery })
-            : embedSrc;
+            ? (coordsSrc || fallback.embedSrc)
+            : (embedSrc || fallback.embedSrc);
 
     const onSave = async () => {
         setSaving(true);
         const payload =
             mode === "coords"
-                ? { mode, address, lat: Number(lat), lng: Number(lng), zoom: Number(zoom), placeQuery }
-                : { mode, address, embedSrc };
+                ? { mode, address, lat: toNum(lat, fallback.lat), lng: toNum(lng, fallback.lng), zoom: toNum(zoom, fallback.zoom), placeQuery }
+                : { mode, address, embedSrc: embedSrc || fallback.embedSrc };
         const { error } = await set(k, payload);
         setSaving(false);
         if (error) alert("فشل الحفظ: " + error.message);
     };
 
-    // عرض الزائر (بدون أدوات)
+    // عرض الزوّار
     if (!canEdit) {
         return (
             <div className={className}>
                 <iframe
                     src={previewSrc}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
+                    className="block w-full h-full [transform:translateZ(0)]"
+                    style={{
+                        border: 0,
+                        WebkitMaskImage: "-webkit-radial-gradient(white, black)", // يخفف مشاكل iOS مع القص
+                    }}
+                    allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     title="خريطة الموقع"
@@ -96,8 +98,9 @@ export default function EditableMap({
 
     // وضع التحرير (أدمن)
     return (
-        <div className={`${className} bg-white`}>
-            <div className="p-3 bg-white/80 border-b border-neutral-200">
+        <div className={`${className} bg-white rounded-3xl overflow-hidden border border-neutral-200`}>
+            {/* شريط علوي للتحكم */}
+            <div className="p-3 bg-white/90 border-b border-neutral-200">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                     <button
                         type="button"
@@ -136,19 +139,19 @@ export default function EditableMap({
                 </div>
             </div>
 
-            {/* محرر الحقول */}
+            {/* الحقول */}
             <div className="p-3 grid gap-3 bg-white">
                 {mode === "url" ? (
                     <div className="grid gap-2">
                         <label className="text-xs text-neutral-500">Google Maps Embed URL</label>
                         <input
-                            className="w-full rounded border border-neutral-300 px-2 py-1 text-sm"
+                            className="w-full rounded border border-neutral-300 px-2 py-1 text-sm ltr"
                             placeholder="ألصق رابط التضمين من خرائط جوجل"
                             value={embedSrc}
                             onChange={(e) => setEmbedSrc(e.target.value)}
                         />
                         <div className="text-xs text-neutral-500">
-                            تلميح: من Google Maps ↗ زر مشاركة ↗ Embed a map ↗ انسخ رابط iframe (src).
+                            من Google Maps → Share → Embed a map → انسخ src من iframe.
                         </div>
                     </div>
                 ) : (
@@ -158,9 +161,9 @@ export default function EditableMap({
                             <input
                                 type="number"
                                 step="0.0000001"
-                                className="w-full rounded border border-neutral-300 px-2 py-1 text-sm"
+                                className="w-full rounded border border-neutral-300 px-2 py-1 text-sm ltr"
                                 value={lat}
-                                onChange={(e) => setLat(parseFloat(e.target.value))}
+                                onChange={(e) => setLat(toNum(e.target.value, lat))}
                             />
                         </div>
                         <div>
@@ -168,9 +171,9 @@ export default function EditableMap({
                             <input
                                 type="number"
                                 step="0.0000001"
-                                className="w-full rounded border border-neutral-300 px-2 py-1 text-sm"
+                                className="w-full rounded border border-neutral-300 px-2 py-1 text-sm ltr"
                                 value={lng}
-                                onChange={(e) => setLng(parseFloat(e.target.value))}
+                                onChange={(e) => setLng(toNum(e.target.value, lng))}
                             />
                         </div>
                         <div>
@@ -179,9 +182,9 @@ export default function EditableMap({
                                 type="number"
                                 min={1}
                                 max={21}
-                                className="w-full rounded border border-neutral-300 px-2 py-1 text-sm"
+                                className="w-full rounded border border-neutral-300 px-2 py-1 text-sm ltr"
                                 value={zoom}
-                                onChange={(e) => setZoom(parseInt(e.target.value) || 14)}
+                                onChange={(e) => setZoom(toNum(e.target.value, zoom) || 14)}
                             />
                         </div>
                         <div>
@@ -198,20 +201,21 @@ export default function EditableMap({
             </div>
 
             {/* المعاينة */}
-            <div className="h-[22rem]">
+            <div className="h-[22rem] md:h-[24rem]">
                 <iframe
                     src={previewSrc}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
+                    className="block w-full h-full [transform:translateZ(0)]"
+                    style={{
+                        border: 0,
+                        WebkitMaskImage: "-webkit-radial-gradient(white, black)",
+                    }}
+                    allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     title="خريطة (معاينة)"
                 />
             </div>
 
-            {/* شريط سفلي لعرض العنوان إن وجد */}
             {address ? (
                 <div className="px-4 py-2 text-sm text-neutral-700 bg-white/90 border-t border-neutral-200">
                     {address}
