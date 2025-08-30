@@ -37,7 +37,8 @@ export default function Header() {
             role="navigation"
             aria-label="الرئيسية"
         >
-            <div className="container-pro h-16 flex items-center justify-between">
+            {/* هيدر أعلى على الموبايل لحتى ياخذ اللوجو راحته */}
+            <div className="container-pro h-[72px] sm:h-16 flex items-center justify-between">
                 {/* Logo */}
                 <Link
                     to="/"
@@ -51,9 +52,10 @@ export default function Header() {
                 >
                     <EditableImage
                         k="brand.logo"
-                        fallback="/assets/brand/logo-icon.png"  
+                        fallback="/assets/brand/logo-icon.png"
                         alt="الشعار"
-                        className="h-20 sm:h-16 w-auto object-contain"
+               
+                        className="h-[56px] sm:h-14 md:h-16 w-auto object-contain shrink-0"
                     />
                 </Link>
 

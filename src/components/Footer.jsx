@@ -1,3 +1,4 @@
+// src/components/Footer.jsx
 import React, { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -13,10 +14,25 @@ import EditableLink from "../cms/Editable/EditableLink";
 function uid() {
     return Math.random().toString(36).slice(2, 9);
 }
+// قراءة مرنة (تدعم الشكل القديم {items:[]}) لكن التخزين سيكون Array مباشرة.
 function asArray(stored, fallbackArr) {
-    if (Array.isArray(stored?.items)) return stored.items;
     if (Array.isArray(stored)) return stored;
+    if (Array.isArray(stored?.items)) return stored.items;
     return fallbackArr;
+}
+function isInternalHref(href = "") {
+    return typeof href === "string" && href.trim().startsWith("/");
+}
+function isExternalHref(href = "") {
+    return /^(https?:\/\/|mailto:|tel:|wa\.me|https?:\/\/wa\.me)/i.test(href?.trim());
+}
+function normalizeLink(u = "") {
+    const v = (u || "").trim();
+    if (!v) return "";
+    if (isExternalHref(v) || isInternalHref(v)) return v;
+    if (/^www\./i.test(v)) return `https://${v}`;
+    if (/^[\w-]+\.[\w.-]+(\/.*)?$/i.test(v)) return `https://${v}`;
+    return v;
 }
 
 /* -------------------- Defaults -------------------- */
@@ -43,7 +59,7 @@ const DEFAULT_EMAILS = [
 ];
 
 const DEFAULT_ADDRESS = [
-    { id: uid(), value:  "عمان - دوار الواحة" },
+    { id: uid(), value: "عمان - دوار الواحة" },
     { id: uid(), value: "شارع وصفي التل" },
 ];
 
@@ -114,7 +130,6 @@ function toLatinDigits(str = "") {
 // تنظيف رقم الهاتف وتحويل 00 -> +
 function normalizePhone(raw = "") {
     const v = toLatinDigits(raw).trim();
-    // أزل كل ما عدا الأرقام و"+" (وابقِ على + في المقدمة فقط)
     let cleaned = v.replace(/[^\d+]/g, "");
     if (cleaned.startsWith("00")) cleaned = `+${cleaned.slice(2)}`;
     cleaned = cleaned.replace(/(?!^)\+/g, "");
@@ -125,19 +140,17 @@ const LRM = "\u200E";
 
 // تنسيق عرض رقمي (لا يؤثر على الرابط)
 function formatPhoneDisplay(raw = "") {
-    const tel = normalizePhone(raw);      // مثل +962792236366
+    const tel = normalizePhone(raw);
     const m = /^\+?(\d{1,3})(\d+)$/.exec(tel.replace(/^tel:/, ""));
     if (!m) return raw.trim();
 
-    const cc = m[1];        // country code
-    const rest = m[2];      // بقية الرقم
+    const cc = m[1];
+    const rest = m[2];
 
-    // تنسيق مُخصص للأردن: +962 7 XXX XXXX
     if (cc === "962" && /^7\d{8}$/.test(rest)) {
         return `+962 7 ${rest.slice(1, 4)} ${rest.slice(4)}`;
     }
 
-    // fallback عام: +CC rest مفصول كل 3 من اليمين
     const grouped = rest.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     return `+${cc} ${grouped}`;
 }
@@ -154,7 +167,6 @@ function autoLink(value, link, iconName) {
 
     if (isEmail) return `mailto:${v}`;
 
-    // هاتف: إن كان الأيقونة Phone أو النص يبدو رقماً، ابنِ tel:
     if (iconName === "Phone" || (!isURL && looksLikePhone)) {
         const phone = normalizePhone(v);
         if (/\d{6,}/.test(phone.replace(/\D/g, ""))) {
@@ -162,7 +174,6 @@ function autoLink(value, link, iconName) {
         }
     }
 
-    // واتساب مختصر
     if (/^(wa\.me|https?:\/\/wa\.me)/i.test(v)) {
         return v.startsWith("http") ? v : `https://${v}`;
     }
@@ -176,13 +187,12 @@ function EditableLinksList({ k, fallback = [], layout = "column", className = ""
     const { get, set, editMode, isAdmin } = useContent();
     const canEdit = editMode && isAdmin;
 
-    const stored = get(k, { items: fallback });
+    const stored = get(k, fallback);
     const initial = useMemo(() => asArray(stored, fallback), [stored, fallback]);
     const [items, setItems] = useState(initial);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState("");
 
-    // Sync with storage updates
     useEffect(() => {
         setItems(asArray(stored, fallback));
     }, [stored, fallback]);
@@ -202,9 +212,10 @@ function EditableLinksList({ k, fallback = [], layout = "column", className = ""
         setSaving(true);
         setStatus("جارٍ الحفظ...");
         const clean = items
-            .map(x => ({ id: x.id || uid(), name: (x.name || "").trim(), href: (x.href || "").trim() }))
+            .map(x => ({ id: x.id || uid(), name: (x.name || "").trim(), href: normalizeLink(x.href || "") }))
             .filter(x => x.name || x.href);
-        const { error } = await set(k, { items: clean });
+
+        const { error } = await set(k, clean); // Array مباشرة
         if (error) {
             setStatus("فشل الحفظ: " + error.message);
         } else {
@@ -219,32 +230,67 @@ function EditableLinksList({ k, fallback = [], layout = "column", className = ""
         if (layout === "row") {
             return (
                 <div className={`flex flex-wrap justify-center gap-6 min-w-0 ${className}`}>
-                    {items.map(link => (
-                        <Link
-                            key={link.id || link.href}
-                            to={link.href || "#"}
-                            className="inline-flex text-xs text-primary-200 hover:text-accent-500 transition"
-                            title={link.name}
-                        >
-                            {link.name || "—"}
-                        </Link>
-                    ))}
+                    {items.map(link => {
+                        const href = normalizeLink(link.href || "");
+                        if (isInternalHref(href)) {
+                            return (
+                                <Link
+                                    key={link.id || href}
+                                    to={href}
+                                    className="inline-flex text-xs text-primary-200 hover:text-accent-500 transition"
+                                    title={link.name}
+                                >
+                                    {link.name || "—"}
+                                </Link>
+                            );
+                        }
+                        return (
+                            <a
+                                key={link.id || href}
+                                href={href || "#"}
+                                target={href ? "_blank" : undefined}
+                                rel={href ? "noopener noreferrer" : undefined}
+                                className="inline-flex text-xs text-primary-200 hover:text-accent-500 transition"
+                                title={link.name}
+                            >
+                                {link.name || "—"}
+                            </a>
+                        );
+                    })}
                 </div>
             );
         }
         return (
             <ul className={`space-y-3 min-w-0 ${className}`}>
-                {items.map(link => (
-                    <li key={link.id || link.href} className="min-w-0">
-                        <Link
-                            to={link.href || "#"}
-                            className="block text-sm text-primary-100 hover:text-accent-500 transition"
-                            title={link.name}
-                        >
-                            {link.name || "—"}
-                        </Link>
-                    </li>
-                ))}
+                {items.map(link => {
+                    const href = normalizeLink(link.href || "");
+                    if (isInternalHref(href)) {
+                        return (
+                            <li key={link.id || href} className="min-w-0">
+                                <Link
+                                    to={href}
+                                    className="block text-sm text-primary-100 hover:text-accent-500 transition"
+                                    title={link.name}
+                                >
+                                    {link.name || "—"}
+                                </Link>
+                            </li>
+                        );
+                    }
+                    return (
+                        <li key={link.id || href} className="min-w-0">
+                            <a
+                                href={href || "#"}
+                                target={href ? "_blank" : undefined}
+                                rel={href ? "noopener noreferrer" : undefined}
+                                className="block text-sm text-primary-100 hover:text-accent-500 transition"
+                                title={link.name}
+                            >
+                                {link.name || "—"}
+                            </a>
+                        </li>
+                    );
+                })}
             </ul>
         );
     }
@@ -263,7 +309,7 @@ function EditableLinksList({ k, fallback = [], layout = "column", className = ""
                         />
                         <input
                             className="w-full rounded px-2 py-1 text-sm text-neutral-900"
-                            placeholder="/path أو https://"
+                            placeholder="/path أو https:// أو tel:/mailto:"
                             value={it.href}
                             onChange={(e) => update(it.id, { href: e.target.value })}
                         />
@@ -286,7 +332,7 @@ function EditableTextList({ k, fallback = [], className = "" }) {
     const { get, set, editMode, isAdmin } = useContent();
     const canEdit = editMode && isAdmin;
 
-    const stored = get(k, { items: fallback });
+    const stored = get(k, fallback);
     const initial = useMemo(() => asArray(stored, fallback), [stored, fallback]);
     const [items, setItems] = useState(initial);
     const [saving, setSaving] = useState(false);
@@ -313,7 +359,8 @@ function EditableTextList({ k, fallback = [], className = "" }) {
         const clean = items
             .map(x => ({ id: x.id || uid(), value: (x.value || "").trim() }))
             .filter(x => x.value);
-        const { error } = await set(k, { items: clean });
+
+        const { error } = await set(k, clean); // Array مباشرة
         if (error) {
             setStatus("فشل الحفظ: " + error.message);
         } else {
@@ -367,7 +414,7 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
     const { get, set, editMode, isAdmin } = useContent();
     const canEdit = editMode && isAdmin;
 
-    const stored = get(k, { items: fallback });
+    const stored = get(k, fallback);
     const initial = useMemo(() => asArray(stored, fallback), [stored, fallback]);
     const [items, setItems] = useState(initial);
     const [saving, setSaving] = useState(false);
@@ -393,11 +440,14 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
         setStatus("جارٍ الحفظ...");
         const clean = items
             .map(x => {
-                const link = autoLink(x.value, x.link, kind);
-                return { id: x.id || uid(), value: (x.value || "").trim(), link: (link || "").trim() };
+                const value = (x.value || "").trim();
+                const built = autoLink(value, x.link, kind);
+                const link = normalizeLink(built);
+                return { id: x.id || uid(), value, link };
             })
             .filter(x => x.value);
-        const { error } = await set(k, { items: clean });
+
+        const { error } = await set(k, clean); // Array مباشرة
         if (error) {
             setStatus("فشل الحفظ: " + error.message);
         } else {
@@ -412,9 +462,8 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
         return (
             <ul className={`space-y-3 text-sm text-primary-100 min-w-0 ${className}`}>
                 {items.map((it) => {
-                    const href = autoLink(it.value, it.link, kind);
-                    const display =
-                        kind === "Phone" ? formatPhoneDisplay(it.value) : (it.value || "—");
+                    const href = normalizeLink(autoLink(it.value, it.link, kind));
+                    const display = kind === "Phone" ? formatPhoneDisplay(it.value) : (it.value || "—");
 
                     return (
                         <li key={it.id} className="flex items-center gap-3 min-w-0">
@@ -425,21 +474,16 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
                                     className="text-white hover:text-accent-500 transition truncate inline-flex items-center"
                                     title={display}
                                 >
-                                    {/* bdi + LRM لتثبيت اتجاه LTR */}
                                     <bdi dir="ltr" className="inline-block">{display}{LRM}</bdi>
                                 </a>
                             ) : (
-                                <span
-                                    className="truncate inline-flex items-center"
-                                    title={display}
-                                >
+                                <span className="truncate inline-flex items-center" title={display}>
                                     <bdi dir="ltr" className="inline-block">{display}{LRM}</bdi>
                                 </span>
                             )}
                         </li>
                     );
                 })}
-
             </ul>
         );
     }
@@ -458,7 +502,7 @@ function EditableContactList({ k, fallback = [], icon: Icon, kind, className = "
                         />
                         <input
                             className="w-full rounded px-2 py-1 text-sm text-neutral-900"
-                            placeholder="الرابط (tel: / mailto: / https:)"
+                            placeholder="الرابط (tel: / mailto: / https:) — يكتشف تلقائيًا لو تركته فاضي"
                             value={it.link}
                             onChange={(e) => update(it.id, { link: e.target.value })}
                         />
@@ -566,7 +610,7 @@ export default function Footer() {
                 </div>
 
                 {/* Legal row */}
-                <div className="py-5 border-t border-white/10">
+                <div className="py-5 border-top border-white/10">
                     <div className="flex flex-wrap justify-center gap-6">
                         <EditableLinksList
                             k="footer.legal"

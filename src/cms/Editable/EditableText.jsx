@@ -14,10 +14,9 @@ export default function EditableText({
     placeholder = "اكتب النص…",
 }) {
     const readVal = (x) => (x && typeof x === "object" ? (x.text ?? fallback) : (x ?? fallback));
-    const { get, set, editMode, isAdmin, locale } = useContent();
+    const { get, set, editMode, isAdmin } = useContent();
 
-    // ✅ احسب القيمة القادمة من الـ CMS في كل ريندر
-    const stored = useMemo(() => readVal(get(k, fallback)), [get, k, fallback /* + (locale ?? '') لو عندك */]);
+    const stored = useMemo(() => readVal(get(k, fallback)), [get, k, fallback]);
 
     const [val, setVal] = useState(stored);
     const [orig, setOrig] = useState(stored);
@@ -27,7 +26,6 @@ export default function EditableText({
     const [saved, setSaved] = useState(false);
     const inputRef = useRef(null);
 
-    // ✅ لما تتغير القيمة المخزنة بعد التحميل، حدّث الحالة (طالما مش عم نحرر حالياً)
     useEffect(() => {
         if (!editing && !saving) {
             if (stored !== orig) {
@@ -35,7 +33,6 @@ export default function EditableText({
                 setOrig(stored);
             }
         }
-        // لو عندك نظام لغات، ضيف locale بالـ deps
     }, [stored, editing, saving, orig]);
 
     const openEdit = () => {
@@ -58,37 +55,27 @@ export default function EditableText({
         const payload =
             current && typeof current === "object" && current !== null && "text" in current
                 ? { text: val }
-                : val;
+                : { text: val }; // توحيد التخزين للنصوص
 
         const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("save-timeout")), SAVE_TIMEOUT_MS));
 
         try {
-            console.groupCollapsed(`[EditableText] save ${k}`);
-            console.log("current:", current);
-            console.log("payload:", payload);
-
             const result = await Promise.race([set(k, payload), timeout]);
-            console.log("set() result:", result);
-
             const error = result?.error;
             if (error) {
-                console.error("save error:", error);
                 alert("فشل الحفظ: " + (error.message || error));
                 return;
             }
-
             setOrig(val);
             setEditing(false);
             setSaved(true);
             setTimeout(() => setSaved(false), 800);
         } catch (err) {
-            console.error("save threw:", err);
             alert(String(err?.message) === "save-timeout"
-                ? "تعذّر الحفظ (انتهت المهلة). تحقق من الاتصال/إعدادات الـ CMS."
-                : "حدث خطأ أثناء الحفظ. راجع الـ Console.");
+                ? "تعذّر الحفظ (انتهت المهلة)."
+                : "حدث خطأ أثناء الحفظ.");
         } finally {
             setSaving(false);
-            console.groupEnd();
         }
     };
 
@@ -97,9 +84,7 @@ export default function EditableText({
         else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancel(); }
     };
 
-    if (!(editMode && isAdmin)) {
-        return <Tag className={className}>{val}</Tag>;
-    }
+    if (!(editMode && isAdmin)) return <Tag className={className}>{val}</Tag>;
 
     if (!editing) {
         return (
@@ -140,8 +125,6 @@ export default function EditableText({
                 className={inputClassName || "border border-neutral-300 focus:border-primary outline-none rounded-lg px-3 py-1.5 text-sm shadow-sm bg-white text-neutral-900"}
                 autoComplete="off"
                 spellCheck={false}
-                data-gramm="false"
-                data-qb-paraphrase="false"
             />
             <button
                 type="button"

@@ -3,6 +3,10 @@ import { Award, CheckCircle, Eye, Shield, Zap } from "lucide-react";
 import EditableImage from "../cms/Editable/EditableImage";
 import EditableValuesIcons from "../cms/Editable/EditableValuesIcons";
 import EditableText from "../cms/Editable/EditableText";
+import EditableLongText from "../cms/Editable/EditableLongText";
+import EditableParagraphsWithBadge from "../cms/Editable/EditableParagraphsWithBadge";
+import EditableBulletList from "../cms/Editable/EditableBulletList";
+import HideableSection from "../components/HideableSection";
 
 
 export default function About() {
@@ -48,9 +52,11 @@ export default function About() {
                                 </span>
                             </h1>
                             <p className="text-xl text-neutral-600 leading-relaxed">
-                                <EditableText
+                                <EditableLongText
                                     k="about.hero.subtitle"
-                                    fallback="محامية متخصصة تجمع بين الخبرة العملية والمعرفة الأكاديمية العميقة، مع التزام راسخ بتحقيق أفضل النتائج لعملائها من خلال نهج إنساني ومهني متميز."
+                                    fallback="محامية متخصصة تجمع بين الخبرة العملية والمعرفة الأكاديمية العميقة..."
+                                    rows={4}
+                                    maxLength={800}
                                 />
                             </p>
                         </motion.div>
@@ -65,15 +71,15 @@ export default function About() {
                             <div className="relative">
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent-500 rounded-3xl -rotate-3 opacity-20" />
                                 <div className="relative bg-white rounded-3xl p-8 shadow-soft">
-                                    <div className="w-full h-80 rounded-2xl overflow-hidden border border-neutral-200">
-                                        {/* بدلاً من <Users/> بنستعمل صورة قابلة للتعديل */}
+                                    <div className="w-full h-80 rounded-2xl overflow-hidden border border-neutral-200 bg-white grid place-items-center">
                                         <EditableImage
                                             k="about.hero.image"
-                                            fallback="/assets/about-hero.png"
-                                            alt="About Hero"
-                                            className="w-full h-full object-cover"
+                                            fallback="/assets/hero-default.png"
+                                            alt="Hero Visual"
+                                            className="max-h-64 w-auto object-contain"
                                         />
                                     </div>
+
                                 </div>
                             </div>
                         </motion.div>
@@ -81,6 +87,8 @@ export default function About() {
                 </div>
             </section>
 
+
+             <HideableSection k="about.work"> 
             {/* الرؤية المهنية */}
             <section className="py-20 bg-neutral-50">
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
@@ -101,7 +109,7 @@ export default function About() {
                             }}
                         >
                             “
-                            <EditableText
+                            <EditableLongText
                                 k="about.vision.quote"
                                 fallback="أؤمن أن القانون ليس مجرد نصوص وأحكام، بل أداة لتحقيق العدالة وحماية الحقوق. كل قضية هي قصة إنسانية تستحق الاهتمام الكامل والخبرة المتخصصة لتحقيق أفضل النتائج الممكنة."
                             />
@@ -113,8 +121,8 @@ export default function About() {
                     </motion.div>
                 </div>
             </section>
-
-            {/* أسلوبي في العمل (أيقونات Lucide ثابتة + نص قابل للتعديل) */}
+            </HideableSection>
+            <HideableSection k="about.ourApproach"> 
             <section className="py-20 bg-neutral-50">
                 <div className="container-pro">
                     <motion.div
@@ -136,12 +144,13 @@ export default function About() {
                     <EditableValuesIcons k="about.values.items" />
                 </div>
             </section>
+            </HideableSection>
 
-            {/* المؤهلات والجوائز (قوائم ثابتة بعدد محدد، كل عنصر نصه قابل للتعديل) */}
+            <HideableSection k="about.qualifications"> 
             <section className="py-20 bg-neutral-50">
                 <div className="container-pro">
                     <div className="grid lg:grid-cols-2 gap-12">
-                        {/* المؤهلات */}
+                  
                         <motion.div
                             initial={{ opacity: 0, x: -50 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -154,29 +163,21 @@ export default function About() {
                                     <EditableText k="about.qualifications.title" fallback="المؤهلات والشهادات" />
                                 </h3>
                             </div>
-                            <ul className="space-y-4">
-                                {Array.from({ length: QUAL_LEN }).map((_, i) => (
-                                    <motion.li
-                                        key={i}
-                                        className="flex items-start gap-3"
-                                        initial={{ opacity: 0, x: -30 }}
-                                        whileInView={{ opacity: 1, x: 0 }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 0.6, delay: i * 0.1 }}
-                                    >
-                                        <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                                        <p className="text-neutral-600">
-                                            <EditableText
-                                                k={`about.qualifications.${i}`}
-                                                fallback={qualFallbacks[i] || "بند مؤهل"}
-                                            />
-                                        </p>
-                                    </motion.li>
-                                ))}
-                            </ul>
+
+                            <EditableBulletList
+                                kBase="about.qualifications"
+                                fallbackItems={[
+                                    "بكالوريوس الحقوق - جامعة الملك سعود (2012)",
+                                    "ماجستير القانون التجاري - جامعة الملك عبدالعزيز (2015)",
+                                    "عضو نقابة المحامين السعوديين",
+                                    "شهادة التحكيم التجاري الدولي",
+                                    "دبلوم القانون العقاري المتقدم",
+                                ]}
+                                iconClass="text-primary"
+                            />
                         </motion.div>
 
-                        {/* الجوائز */}
+
                         <motion.div
                             initial={{ opacity: 0, x: 50 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -189,32 +190,26 @@ export default function About() {
                                     <EditableText k="about.awards.title" fallback="الجوائز والتكريم" />
                                 </h3>
                             </div>
-                            <ul className="space-y-4">
-                                {Array.from({ length: AWARD_LEN }).map((_, i) => (
-                                    <motion.li
-                                        key={i}
-                                        className="flex items-start gap-3"
-                                        initial={{ opacity: 0, x: 30 }}
-                                        whileInView={{ opacity: 1, x: 0 }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 0.6, delay: i * 0.1 }}
-                                    >
-                                        <CheckCircle className="w-5 h-5 text-accent-500 mt-0.5 flex-shrink-0" />
-                                        <p className="text-neutral-600">
-                                            <EditableText
-                                                k={`about.awards.${i}`}
-                                                fallback={awardFallbacks[i] || "بند تكريم"}
-                                            />
-                                        </p>
-                                    </motion.li>
-                                ))}
-                            </ul>
+
+                            <EditableBulletList
+                                kBase="about.awards"
+                                fallbackItems={[
+                                    "جائزة أفضل محامية شابة - نقابة المحامين (2019)",
+                                    "تكريم للتميز في القضايا العقارية (2021)",
+                                    "عضو لجنة تطوير القوانين التجارية",
+                                    "محكم معتمد لدى المركز السعودي للتحكيم التجاري",
+                                ]}
+                                iconClass="text-accent-500"
+                            />
                         </motion.div>
+
+                 
                     </div>
                 </div>
             </section>
-
+            </HideableSection>
             {/* الدور داخل المكتب */}
+            <HideableSection k="about.workinoffice"> 
             <section className="py-20 bg-neutral-50">
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div
@@ -228,19 +223,16 @@ export default function About() {
                             <EditableText k="about.role.title" fallback="داخل مكتب الأحمد والشركاه" />
                         </h2>
 
-                        <p className="text-xl text-neutral-600 leading-relaxed mb-8">
-                            <EditableText
-                                k="about.role.body"
-                                fallback="أعمل ضمن فريق متخصص من المحامين في مكتب الأحمد والشركاه، حيث أقود قسم القضايا المدنية والتجارية. دوري يتمحور حول تقديم استشارات قانونية متخصصة وتمثيل العملاء في القضايا المعقدة، مع الاستفادة من الموارد والخبرات المتنوعة لضمان أفضل النتائج لعملائي."
-                            />
-                        </p>
-
-                        <div className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-primary to-accent-500 text-white font-semibold shadow-md">
-                            <EditableText k="about.role.badge" fallback="شريك مؤسس - قسم القضايا المدنية والتجارية" />
-                        </div>
+                        {/* ✅ هنا التحكم بالفقرات + زر البادج */}
+                        <EditableParagraphsWithBadge
+                            kBase="about.role"
+                            fallbackBody="أعمل ضمن فريق متخصص من المحامين في مكتب الأحمد والشركاه، حيث أقود قسم القضايا المدنية والتجارية..."
+                            fallbackBadgeText="شريك مؤسس - قسم القضايا المدنية والتجارية"
+                        />
                     </motion.div>
                 </div>
             </section>
+            </HideableSection>
         </div>
     );
 }

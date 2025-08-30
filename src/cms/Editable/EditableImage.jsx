@@ -8,16 +8,16 @@ function Spinner() {
 export default function EditableImage({
     k,
     fallback = "https://placehold.co/140x40?text=Logo",
-    alt = "logo",
+    alt = "image",
     className = "h-10 w-auto object-contain",
 }) {
     const { get, set, editMode, isAdmin } = useContent();
 
- 
     const normalize = (v) => {
         if (typeof v === "string") return v;
         if (v && typeof v === "object") {
-            return v.src || v.image_url || v.url || "";
+            // موحّد: image_url أولاً
+            return v.image_url || v.url || v.src || "";
         }
         return "";
     };
@@ -29,7 +29,6 @@ export default function EditableImage({
     const [saved, setSaved] = useState(false);
     const inputRef = useRef(null);
 
-   
     useEffect(() => {
         const v = normalize(get(k, fallback));
         setSrc(v || fallback);
@@ -51,7 +50,8 @@ export default function EditableImage({
         if (!(editMode && isAdmin)) return;
         if (src === orig) { setEditing(false); return; }
         setSaving(true);
-        const { error } = await set(k, { src }); 
+        // التخزين الموحّد
+        const { error } = await set(k, { image_url: src });
         setSaving(false);
         if (error) {
             alert("فشل الحفظ: " + error.message);
@@ -68,7 +68,6 @@ export default function EditableImage({
         else if (e.key === "Escape") { e.preventDefault(); cancel(); }
     };
 
-  
     if (!(editMode && isAdmin)) {
         return <img src={src || fallback} alt={alt} className={className} />;
     }
@@ -86,7 +85,6 @@ export default function EditableImage({
             </div>
         );
     }
-
 
     return (
         <div className="flex items-center gap-2">

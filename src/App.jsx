@@ -15,7 +15,7 @@ import Media from './pages/Media';
 import Booking from './pages/Booking';
 import Contact from './pages/Contact';
 import AdminLoginButton from './auth/AdminLoginButton';
-import AuthCallback from './auth/AuthCallback';
+
 import Header from './components/Header';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
@@ -38,8 +38,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             
-            <Route path="/auth/callback" element={<AuthCallback />} />
-
+      
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
             <Route path="/cases" element={<Cases />} />

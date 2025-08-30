@@ -1,28 +1,24 @@
+// src/components/AdminLoginButton.jsx
 import React, { useEffect, useState } from "react";
-import { useAuth } from "./AuthProvider";
- 
-import LoginModal from "./LoginModal";
+import { useAuth } from "../auth/AuthProvider";
 import { useContent } from "../cms/ContentProvider";
+import LoginModal from "./LoginModal";
 
 export default function AdminLoginButton() {
     const { user } = useAuth();
-    const { isAdmin } = useContent(); // AdminBar يظهر تلقائيًا لما تكون cms_admin
+    const { isAdmin } = useContent();
     const [open, setOpen] = useState(false);
     const [visible, setVisible] = useState(false);
 
-
-    // اختصار لوحة مفاتيح لإظهار الزر/المودال بدون ما يبين للكل
     useEffect(() => {
         const onKey = (e) => {
-            if (e.shiftKey && e.code === "KeyA") {
-                setVisible((v) => !v);
-            }
+            if (e.shiftKey && e.code === "KeyA") setVisible((v) => !v);
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
-    if (user || isAdmin) return null; // مسجل دخول أو أدمن؟ لا تعرض الزر
+    if (user || isAdmin) return null;
 
     return (
         <>

@@ -3,6 +3,11 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, User, Phone, Mail, MessageCircle, CheckCircle } from "lucide-react";
 import EditableText from "../cms/Editable/EditableText";
 import emailjs from "emailjs-com";
+
+function Spinner() {
+    return <span className="inline-block h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />;
+}
+
 export default function Booking() {
     const [formData, setFormData] = useState({
         name: "",
@@ -16,6 +21,8 @@ export default function Booking() {
     });
 
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [sending, setSending] = useState(false);
+    const [error, setError] = useState("");
 
     const caseTypes = [
         "قضايا مدنية",
@@ -40,6 +47,9 @@ export default function Booking() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (sending) return;
+        setError("");
+        setSending(true);
 
         try {
             const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
@@ -49,21 +59,23 @@ export default function Booking() {
             const templateParams = {
                 name: formData.name,
                 phone: formData.phone,
-                email: formData.email || "-",          // عشان يظهر بـ Reply-To
+                email: formData.email || "-",          // يظهر في Reply-To حسب القالب
                 caseType: formData.caseType,
                 preferredDate: formData.preferredDate,
                 preferredTime: formData.preferredTime,
                 contactMethod: formData.contactMethod,
                 message: formData.message || "-",
-                time: new Date().toLocaleString(),     // يوصلك مع الإيميل
+                time: new Date().toLocaleString(),     // يوصل مع الإيميل
             };
 
             await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
 
-            setIsSubmitted(true); // يظهر شاشة النجاح
+            setIsSubmitted(true); // شاشة النجاح
         } catch (err) {
-            console.error("EmailJS Error:", err);
-            alert("تعذر إرسال الطلب، حاول لاحقًا.");
+            console.error(err);
+            setError("تعذر إرسال الطلب، حاول لاحقًا.");
+        } finally {
+            setSending(false);
         }
     };
 
@@ -105,7 +117,6 @@ export default function Booking() {
                         </ul>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                
                         <button
                             onClick={() => setIsSubmitted(false)}
                             className="px-6 py-3 text-primary font-semibold hover:text-accent-600 transition-colors duration-300"
@@ -125,18 +136,13 @@ export default function Booking() {
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                         <h1 className="text-5xl font-extrabold text-neutral-900 mb-6">
-                           
                             <EditableText k="booking.hero.title.top" fallback="احجز استشارة" />
-                            
                             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent-500">
-                               
                                 <EditableText k="booking.hero.title.bottom" fallback="مع المحامية سارة الأحمد" />
                             </span>
                         </h1>
                         <p className="text-xl text-neutral-600 leading-relaxed">
-                         
                             <EditableText k="booking.hero.subtitle" fallback="استشارة شاملة لفهم قضيتك وتحديد أفضل الخيارات القانونية المتاحة" />
-                            
                         </p>
                     </motion.div>
                 </div>
@@ -158,7 +164,7 @@ export default function Booking() {
                                     </p>
                                 </div>
 
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                                <form onSubmit={handleSubmit} className="space-y-6 relative" aria-busy={sending}>
                                     {/* Name & Phone */}
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
@@ -173,7 +179,8 @@ export default function Booking() {
                                                 value={formData.name}
                                                 onChange={handleInputChange}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                                placeholder="اكتب اسمك الكامل" // ثابت
+                                                placeholder="اكتب اسمك الكامل"
+                                                disabled={sending}
                                             />
                                         </div>
 
@@ -189,7 +196,8 @@ export default function Booking() {
                                                 value={formData.phone}
                                                 onChange={handleInputChange}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                                placeholder="07xxxxxxxx" // ثابت
+                                                placeholder="07xxxxxxxx"
+                                                disabled={sending}
                                             />
                                         </div>
                                     </div>
@@ -205,7 +213,8 @@ export default function Booking() {
                                             value={formData.email}
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                                            placeholder="example@email.com" // ثابت
+                                            placeholder="example@email.com"
+                                            disabled={sending}
                                         />
                                     </div>
 
@@ -221,8 +230,9 @@ export default function Booking() {
                                             value={formData.caseType}
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                            disabled={sending}
                                         >
-                                            <option value="">اختر نوع القضية</option> {/* ثابت */}
+                                            <option value="">اختر نوع القضية</option>
                                             {caseTypes.map((type) => (
                                                 <option key={type} value={type}>
                                                     {type}
@@ -246,6 +256,7 @@ export default function Booking() {
                                                 onChange={handleInputChange}
                                                 min={new Date().toISOString().split("T")[0]}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                                disabled={sending}
                                             />
                                         </div>
 
@@ -260,8 +271,9 @@ export default function Booking() {
                                                 value={formData.preferredTime}
                                                 onChange={handleInputChange}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                                                disabled={sending}
                                             >
-                                                <option value="">اختر الوقت</option> {/* ثابت */}
+                                                <option value="">اختر الوقت</option>
                                                 {timeSlots.map((slot) => (
                                                     <option key={slot} value={slot}>
                                                         {slot}
@@ -285,6 +297,7 @@ export default function Booking() {
                                                     checked={formData.contactMethod === "phone"}
                                                     onChange={handleInputChange}
                                                     className="text-primary focus:ring-primary"
+                                                    disabled={sending}
                                                 />
                                                 <Phone className="w-4 h-4" />
                                                 <EditableText k="booking.form.contactMethod.phone" fallback="مكالمة هاتفية" />
@@ -297,6 +310,7 @@ export default function Booking() {
                                                     checked={formData.contactMethod === "whatsapp"}
                                                     onChange={handleInputChange}
                                                     className="text-primary focus:ring-primary"
+                                                    disabled={sending}
                                                 />
                                                 <MessageCircle className="w-4 h-4" />
                                                 <EditableText k="booking.form.contactMethod.whatsapp" fallback="واتساب" />
@@ -309,6 +323,7 @@ export default function Booking() {
                                                     checked={formData.contactMethod === "email"}
                                                     onChange={handleInputChange}
                                                     className="text-primary focus:ring-primary"
+                                                    disabled={sending}
                                                 />
                                                 <Mail className="w-4 h-4" />
                                                 <EditableText k="booking.form.contactMethod.email" fallback="بريد إلكتروني" />
@@ -327,20 +342,44 @@ export default function Booking() {
                                             value={formData.message}
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-right focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"
-                                            placeholder="اكتب تفاصيل موجزة عن قضيتك أو الاستشارة المطلوبة..." // ثابت
+                                            placeholder="اكتب تفاصيل موجزة عن قضيتك أو الاستشارة المطلوبة..."
+                                            disabled={sending}
                                         />
                                     </div>
 
-                                    {/* Submit Button */}
+                                    {/* Submit */}
                                     <motion.button
                                         type="submit"
-                                        className="w-full inline-flex items-center justify-center px-8 py-4 rounded-full bg-gradient-to-r from-primary to-accent-500 text-white font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        disabled={sending}
+                                        className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-primary to-accent-500 text-white font-semibold text-lg hover:shadow-lg transform transition-all disabled:opacity-60"
+                                        whileHover={{ scale: sending ? 1 : 1.02 }}
+                                        whileTap={{ scale: sending ? 1 : 0.98 }}
                                     >
-                                        <Calendar className="w-5 h-5 ml-3" />
-                                        <EditableText k="booking.form.submit" fallback="تأكيد الحجز" />
+                                        {sending ? (
+                                            <>
+                                                <Spinner />
+                                                جاري الإرسال…
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Calendar className="w-5 h-5 ml-1" />
+                                                <EditableText k="booking.form.submit" fallback="تأكيد الحجز" />
+                                            </>
+                                        )}
                                     </motion.button>
+
+                                    {/* خطأ عام */}
+                                    {error && <p className="text-sm text-red-600">{error}</p>}
+
+                                    {/* Overlay تحميل أثناء الإرسال */}
+                                    {sending && (
+                                        <div className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-sm grid place-items-center">
+                                            <div className="rounded-2xl bg-white px-6 py-4 shadow-xl border border-neutral-200 flex items-center gap-3">
+                                                <Spinner />
+                                                <span className="font-semibold text-neutral-800">جاري إرسال طلبك…</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </form>
                             </div>
 

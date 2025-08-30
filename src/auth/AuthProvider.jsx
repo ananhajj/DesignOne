@@ -1,6 +1,6 @@
+// src/auth/AuthProvider.jsx
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-
 
 const AuthCtx = createContext(null);
 
@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    useEffect(() => {               // 👈 كان ناقص
         (async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session || null);
@@ -22,19 +22,21 @@ export function AuthProvider({ children }) {
             setUser(session?.user || null);
         });
         return () => listener?.subscription?.unsubscribe?.();
-    }, []);
+    }, []);                         // 👈 كان ناقص
 
-    const signInWithOtp = (email) =>
-        supabase.auth.signInWithOtp({
+    const signIn = (email, password) =>
+        supabase.auth.signInWithPassword({ email, password });
+
+    const signUpAdmin = (email, password) =>
+        supabase.auth.signUp({
             email,
-            options: {
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
+            password,
+            options: { data: { role: "cms_admin" } },
         });
 
     const signOut = () => supabase.auth.signOut();
 
-    const value = useMemo(() => ({ session, user, loading, signInWithOtp, signOut }), [session, user, loading]);
+    const value = useMemo(() => ({ session, user, loading, signIn, signUpAdmin, signOut }), [session, user, loading]);
 
     return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }

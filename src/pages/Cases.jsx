@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Building, Calendar, FileText, Gavel, Heart, Home, Scale } from "lucide-react";
 import { Link } from "react-router-dom";
-import EditableCasesGrid from "../cms/Editable/EditableCasesGrid";
-import EditableText from "../cms/Editable/EditableText";
+ import EditableText from "../cms/Editable/EditableText";
 import EditableLink from "../cms/Editable/EditableLink";
+import EditableCasesPage from "../cms/Editable/EditableCasesPage";
 export default function Cases() {
  
 
@@ -36,9 +36,11 @@ export default function Cases() {
             {/* الشبكة الديناميكية */}
             <section className="py-20">
                 <div className="container-pro">
-                    <EditableCasesGrid k="cases.items" />
+                    {/* ✅ الشبكة الكاملة + CRUD */}
+                    <EditableCasesPage k="cases.data" />
                 </div>
             </section>
+
 
             {/* CTA */}
             <section className="relative py-20 bg-gradient-to-br from-primary-700 via-primary-800 to-primary-900 text-white overflow-hidden">

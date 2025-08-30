@@ -1,26 +1,11 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
 import { motion } from "framer-motion";
-import {
-    Building,
-    FileText,
-    Gavel,
-    Heart,
-    Home,
-    Scale,
-    Calendar,
-    ChevronDown,
-    ChevronUp,
-} from "lucide-react";
-import EditableServicesTabs from "../cms/Editable/EditableServicesTabs";
 import EditableText from "../cms/Editable/EditableText";
+import EditableServicesTabs from "../cms/Editable/EditableServicesTabs";
 
 export default function Services() {
- 
-
-
     return (
-        <div dir="rtl" className="pt-20  bg-neutral-50">
+        <div dir="rtl" className="pt-20 bg-neutral-50">
             {/* Hero */}
             <section className="py-20 bg-gradient-to-br from-neutral-50 to-white">
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
@@ -32,14 +17,17 @@ export default function Services() {
                             </span>
                         </h1>
                         <p className="text-xl text-neutral-600">
-                            <EditableText k="services.hero.subtitle" fallback="خدمات شاملة تغطي التخصصات الرئيسية بخبرة عملية تتجاوز 12 عامًا" />
+                            <EditableText
+                                k="services.hero.subtitle"
+                                fallback="خدمات شاملة تغطي التخصصات الرئيسية بخبرة عملية تتجاوز 12 عامًا"
+                            />
                         </p>
                     </motion.div>
                 </div>
             </section>
 
-          
-            <EditableServicesTabs k="services.tabs" />
+            {/* Tabs مصدرها services.data */}
+            <EditableServicesTabs k="services.data" />
         </div>
     );
 }
